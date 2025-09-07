@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>College Campus Map</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bitcount+Prop+Double:wght@100..900&family=Lobster&family=Lobster+Two:ital,wght@0,400;0,700;1,400;1,700&family=Oswald:wght@200..700&family=Satisfy&family=Story+Script&display=swap" rel="stylesheet">
+  <style>
+    body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+
+  /* Purple Gradient Background */
+  background: linear-gradient(rgb(255, 6, 238), rgb(219, 219, 219),rgb(255, 6, 238));
+  height: 100vh;
+  width: 100vw;
+}
+
+#map {
+  height: 100vh;
+  width: 100%;
+  background: transparent !important; /* map ka default white bg hatana */
+}
+  
+.page-title {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 15px;
+  text-align: center;
+  font-family: "Bitcount Prop Double", system-ui;
+  font-size: 30px;
+  font-weight: bold;
+  color: rgb(0, 0, 0);
+
+  /* Gradient background for title bar */
+  background: linear-gradient(90deg, #ff44ff, #ff9502, #ff4dff);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  
+  z-index: 1100;
+}
+
+
+    .floor-buttons {
+  position: absolute;
+  top: 60px;   /* pehle 10px tha, ab title bar ke neeche shift */
+  left: 10px;
+  background: rgba(183, 88, 255, 0.9);
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  z-index: 1000;
+}
+
+.routing-controls {
+  position: absolute;
+  top: 60px;   /* title ke neeche shift */
+  right: 10px;
+  background: rgba(183, 88, 255, 0.9);
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  z-index: 1000;
+}
+
+    .text-label {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  text-align: center;
+}
+.map-label {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  text-align: center;
+}
+
+.entrance-label {
+  color: rgb(0, 0, 0);         /* Entrance = Blue */
+  font-weight: 70px;
+}
+
+.washroom-label {
+  color: rgb(255, 242, 63);        /* Washrooms = Green */
+  font-weight: bold;
+}
+
+.basement-label {
+  color: rgb(255, 238, 87);        /* Basement Doors = Brown */
+  font-weight: bold;
+}
+    select, button {
+      margin: 5px 0;
+      padding: 6px 10px;
+      border-radius: 5px;
+      border: 1px solid #000000;
+      background-color: aqua;
+    }
+    button#getRoute {
+      background: #f4ff59;
+      color: rgb(0, 0, 0);
+      border: none;
+      cursor: pointer;
+    }
+    button#getRoute:hover {
+      background: #3bff69;
+      color: rgb(0, 0, 0);
+    }
+  </style>
+</head>
+<body>
+   <div class="page-title">
+  GIT College Campus Map
+</div>
+
+  <div id="map"></div>
+  
+  <!-- Floor Switch Buttons -->
+  <div class="floor-buttons">
+    <button onclick="loadFloor('collage map 1.jpg')">1st Floor</button>
+    <button onclick="loadFloor('map2.png')">2nd Floor</button>
+    <button onclick="loadFloor('map3.png')">3rd Floor</button>
+  </div>
+
+  <!-- Routing Controls -->
+  <div class="routing-controls">
+    <label>Start:</label>
+    <select id="start">
+      <option value="1000,1000">Entrance 1</option>
+      <option value="0,1000">Entrance 2</option>
+      <option value="250,400">Classroom LH-1c</option>
+      <option value="550,350">Classroom LH-2c</option>
+      <option value="700,400">Classroom LH-3c</option>
+      <option value="700,1600">Classroom LH-4c</option>
+      <option value="470,1630">Classroom LH-5c</option>
+      <option value="250,1600">Classroom LH-6c</option>
+      <option value="900,1200">Girls Washroom</option>
+      <option value="100,1200">Boys Washroom</option>
+      <option value="900,850">Basement Door 1</option>
+      <option value="100,850">Basement Door 2</option>
+    </select>
+
+    <label>End:</label>
+    <select id="end">
+      <option value="1000,1000">Entrance 1</option>
+      <option value="0,1000">Entrance 2</option>
+      <option value="250,400">Classroom LH-1c</option>
+      <option value="550,350">Classroom LH-2c</option>
+      <option value="700,400">Classroom LH-3c</option>
+      <option value="700,1600">Classroom LH-4c</option>
+      <option value="470,1630">Classroom LH-5c</option>
+      <option value="250,1600">Classroom LH-6c</option>
+      <option value="900,1200">Girls Washroom</option>
+      <option value="100,1200">Boys Washroom</option>
+      <option value="900,850">Basement Door 1</option>
+      <option value="100,850">Basement Door 2</option>
+    </select>
+
+    <button id="getRoute" onclick="findRoute()">Get Route</button>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+  var map = L.map('map', {
+    crs: L.CRS.Simple,
+    minZoom: -1,
+    maxZoom: 2
+  });
+
+  var currentOverlay;
+  var currentPath; // polyline store karne ke liye
+  var currentMarkers = []; // route ke start/end markers store karne ke liye
+
+  function loadFloor(imageUrl) {
+    if (currentOverlay) {
+      map.removeLayer(currentOverlay);
+    }
+
+    var w = 2000, h = 1000; // apne image ke size ke hisaab se
+    var bounds = [[0,0], [h,w]];
+    currentOverlay = L.imageOverlay(imageUrl, bounds).addTo(map);
+    map.fitBounds(bounds);
+
+    // old path/markers hata do
+    if (currentPath) {
+      map.removeLayer(currentPath);
+    }
+    clearMarkers();
+  }
+
+  // saare old markers hataane ke liye
+  function clearMarkers() {
+    currentMarkers.forEach(m => map.removeLayer(m));
+    currentMarkers = [];
+  }
+
+  // Static location labels (map ke liye permanent names)
+  var locations = {
+    "Entrance 1": [1000, 1000],
+    "Entrance 2": [0, 1000],
+    "Classroom LH-1c": [250, 400],
+    "Classroom LH-2c": [550, 350],
+    "Classroom LH-3c": [700, 400],
+    "Classroom LH-4c": [700, 1600],
+    "Classroom LH-5c": [470, 1630],
+    "Classroom LH-6c": [250, 1600],
+    "Girls Washroom": [900, 1200],
+    "Boys Washroom": [100, 1200],
+    "Basement Door 1": [900, 850],
+    "Basement Door 2": [100, 850]
+  };
+
+  // Function to add static labels
+
+function addLabels() {
+  for (var name in locations) {
+    var point = locations[name];
+    var cssClass = "map-label"; // default
+
+    if (name.includes("Entrance")) {
+      cssClass = "map-label entrance-label";
+    } else if (name.includes("Washroom")) {
+      cssClass = "map-label washroom-label";
+    } else if (name.includes("Basement Door")) {
+      cssClass = "map-label basement-label";
+    }
+
+    L.marker(point, {
+      icon: L.divIcon({
+        className: cssClass,
+        html: "<b>" + name + "</b>",
+        iconSize: [120, 20]
+      })
+    }).addTo(map);
+  }
+}
+
+
+  // Route find function
+function findRoute() {
+  var startSelect = document.getElementById("start");
+  var endSelect = document.getElementById("end");
+
+  var startText = startSelect.options[startSelect.selectedIndex].text;
+  var endText = endSelect.options[endSelect.selectedIndex].text;
+
+  var startPoint = locations[startText];
+  var endPoint = locations[endText];
+
+  if(currentPath) map.removeLayer(currentPath);
+  clearMarkers();
+
+  if(startPoint && endPoint) {
+    currentPath = L.polyline([startPoint, endPoint], {color:"red", weight:6}).addTo(map);
+
+    var startMarker = L.marker(startPoint).addTo(map).bindPopup("Start: "+startText);
+    var endMarker = L.marker(endPoint).addTo(map).bindPopup("End: "+endText);
+    currentMarkers.push(startMarker, endMarker);
+
+    map.fitBounds(currentPath.getBounds());
+  } else {
+    alert("Invalid start or end location!");
+  }
+}
+
+
+  // Default load
+  loadFloor('collage map 1.jpg');
+  addLabels();
+</script>
+
+
+</body>
+</html>
